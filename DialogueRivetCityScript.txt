@@ -1,0 +1,264 @@
+ScriptName DialogueRivetCityScript
+
+Short StartVote						; Repurposed. Set when Mei Wong flees from the player, so that this only happens once
+Short MeiWongKnown			; 1 if player knows Mei Wong is a runaway slave
+										; 2 if Sister knows Mei Wong is a runaway slave
+										; 3 Mei Wong has been told Sister knows
+										; 4 Sister captures Mei Wong
+										; 5 Mei Wong commits suicide
+										; 6 Player resolves to do nothing
+Short DiegoDefrocked			; 1 when Father Clifford decides to defrock Diego
+										; 2 when Father Clifford has spoken to Diego and kicked him out of the church
+										; 3 when Diego and Angela are married
+										; 4 when Diego agrees to stop seeing Angela, but hasn't talked to her yet
+										; 5 when Diego stops seeing Angela (he has told her)
+Short DefrockDay					; Day that player tells Father Clifford
+Short Pheromone					; 1 if Angela has Ant Pheromones
+										; 2 when she has used it on Diego
+Short RCSecurity1Dead			; Set when Security guard Bridge Post Day dies
+Short RCSecurity2Dead			; Set when Security guard Bridge Post Night dies
+Short RCSecurity3Dead			; Set when Security guard Gate Post Day dies
+Short RCSecurity4Dead			; Set when Security guard Gate Post Night dies
+Short RCSecurity5Dead			; Set when Security guard Hangar Post Day dies
+Short RCSecurity6Dead			; Set when Security guard Hangar Post Night dies
+Short RCSecurity7Dead			; Set when Security guard Patrol Mid dies
+Short RCSecurity8Dead			; Set when Security guard Patrol Upper dies
+Short RCSecurity9Dead			; Set when Security guard Patrol Day dies
+Short RCSecurity10Dead		; Set when Security guard Patrol Night dies
+Short PaulieDrugs					; Flag set when player gives Paulie some drugs.
+Short	JamesRunAway			; 1 = Player has made him run away. Force packages on James and CJ, set this flag to 2
+										; 2 = They have runaway.
+										; 3 = They are on their way back.
+										; 4 = They have returned.
+Float JamesAmmoDay			; Day that James starts stealing stuff
+Short CJMissing					; Flag set if the people of Rivet City have noticed CJ is missing. Nobody cares about James.
+Short PackageLine				; Determines which line in the topic RCPackageEnd is said.
+Short DrLiCouncil					; Set if Doctor Li is running the city council package. 
+										; If she is not Bannon, Harkness, Danvers will not attempt to hold a meeting.
+Short TrinnieDrinks				; How many drinks has Trinnie had
+Short SafeEntry					; PC has permission from Harkness to be in Rivet City
+Short SisterFoundMei			; Set when Sister has found Mei Wong
+Short WeddingVow				; Controls which line of the wedding vow is being said.
+Short Wedding						; 1 = Wedding announced, rumors and conversations about it
+										; 2 = Player has received an invitation, which sets the date
+										; 3 = Day of the wedding has arrived
+										; 4 = Start walking up the isle
+										; 5 = Ceremony in progress
+										; 6 = Ceremony complete
+										; 99 = Ceremony cancelled, most likely because someone died
+Short WeddingDay				; Day of the ceremony
+Short Today							; Temp variable used to convert GameDaysPassed to an integer
+Short EVPflag						; Set when wedding NPCs have been EVP'd
+Short FoolPrivateJones			; Set when Private Jones has been tricked.
+Short Donation						; Current donation amount. Decremented when karma is awarded. 100 caps for 10 karma.
+Short LiInfo							; Flag set if the player has learned of, or spoken to, Doctor Li. Enables dialogue for other RC residents
+Short SeagraveCouncil			; 1 = when Bannon asks player for help.
+										; 2 = if Seagrave Holmes discredits Bannon. The council stops meeting in that case.
+										; 3 = if Bannon discredits Seagrave Holmes
+Short DayArrived					; Set to the day the player arrives at Rivet City
+
+
+Begin MenuMode
+	; If the player tells Sister that Mei Wong is a runaway slave, disable her to simulate her being captured.
+	; Happens only when player is not in the same cell as Mei Wong or Sister, and between midnight and 5am.
+	; It could be a few days before this happens.
+	If MeiWongKnown == 2 || MeiWongKnown == 3
+		If Player.GetInSameCell MeiWongRef == 0 && Player.GetInSameCell SisterRef == 0
+			If Gamehour <=5
+				If MeiWongKnown == 2
+					MeiWongRef.Kill
+					MeiWongRef.Disable				; captured
+					Set MeiWongKnown to 4
+				Else
+					MeiWongRef.Kill					; suicide
+					Set MeiWongKnown to 5
+				EndIf
+			EndIf
+		EndIf
+	EndIf
+End
+
+Begin GameMode
+	If RCSecurityBridgePostDayRef.GetDead == 0
+		Set RCSecurity1Dead to 0
+	EndIf
+	If RCSecurityBridgePostNightRef.GetDead == 0
+		Set RCSecurity2Dead to 0
+	EndIf
+	If RCSecurityGatePostDayRef.GetDead == 0
+		Set RCSecurity3Dead to 0
+	EndIf
+	If RCSecurityGatePostNightRef.GetDead == 0
+		Set RCSecurity4Dead to 0
+	EndIf
+	If RCSecurityHangarPostDayRef.GetDead == 0
+		Set RCSecurity5Dead to 0
+	EndIf
+	If RCSecurityHangarPostNightRef.GetDead == 0
+		Set RCSecurity6Dead to 0
+	EndIf
+	If RCSecurityPatrolMidRef.GetDead == 0
+		Set RCSecurity7Dead to 0
+	EndIf
+	If RCSecurityPatrolUpperRef.GetDead == 0
+		Set RCSecurity8Dead to 0
+	EndIf
+	If RCSecurityPatrolDayRef.GetDead == 0
+		Set RCSecurity9Dead to 0
+	EndIf
+	If RCSecurityPatrolNightRef.GetDead == 0
+		Set RCSecurity10Dead to 0
+	EndIf
+
+	If RCSecurityHangarPostDayRef.GetDead == 1				; If the guard that locks and unlocks the doors dies,
+		If GameHour >= 21 && GameHour <= 22						; do it in script until he respawns.
+			If RCDoorToUpperDeckRef.GetLocked == 0
+				RCDoorToUpperDeckRef.Lock
+			EndIf
+			If RCDoorToMidDeckRef.GetLocked == 0
+				RCDoorToMidDeckRef.Lock
+			EndIf
+		EndIf
+		If GameHour >= 6 && GameHour <= 7
+			If RCDoorToUpperDeckRef.GetLocked == 1
+				RCDoorToUpperDeckRef.Unlock
+			EndIf
+			If RCDoorToMidDeckRef.GetLocked == 1
+				RCDoorToMidDeckRef.Unlock
+			EndIf
+		EndIf
+	EndIf
+
+	If DoctorLiRef.GetIsCurrentPackage DoctorLiCouncil9x3Mon == 1
+		Set DrLiCouncil to 1
+	Else
+		Set DrLiCouncil to 0
+	EndIf		
+
+	; Diego and Angela
+	If DiegoDefrocked == 0
+
+		If Pheromone == 1
+
+			if (getStage ANiceDayForARightWedding < 40)
+
+				setStage ANiceDayForARightWedding 40
+
+			endif
+
+			If GameDaysPassed >= DefrockDay +1
+
+				Set Pheromone to 2								; Angela seduces Diego
+				Set DiegoDefrocked to 2							; Diego leaves the church to marry Angela
+				Set Wedding to 1
+
+				if (getStage ANiceDayForARightWedding < 70)
+
+					setStage ANiceDayForARightWedding 70
+
+				endif
+
+			EndIf
+
+		EndIf
+
+	ElseIf DiegoDefrocked == 1									; Father Clifford decides to talk to Diego, but hasn't yet
+
+		if (getStage ANiceDayForARightWedding < 50)
+
+			setStage ANiceDayForARightWedding 50
+
+		endif
+
+		If GameDaysPassed >= DefrockDay + 1
+
+			Set DiegoDefrocked to 2							; if player doesn't try to hear Father Clifford defrock Diego,
+
+				if (getStage ANiceDayForARightWedding < 100)
+
+					setStage ANiceDayForARightWedding 100
+
+				endif
+		
+			EndIf														; have it automatically happen after a day.
+
+	ElseIf DiegoDefrocked == 4									; Diego decides to tell Angela to stay away, but hasn't done so yet
+
+		if (getStage ANiceDayForARightWedding < 60)
+
+			setStage ANiceDayForARightWedding 60
+
+		endif
+
+		If GameDaysPassed >= DefrockDay + 1
+
+			Set DiegoDefrocked to 5
+		
+			if (getStage ANiceDayForARightWedding > 0)
+
+				setStage ANiceDayForARightWedding 0
+
+			Endif
+
+		EndIf
+
+	EndIf
+
+
+
+	; Wedding Ceremony
+
+	If Wedding > 0 && Wedding < 99
+		If AngelaStaleyRef.GetDead == 1 || DiegoRef.GetDead == 1 || FatherCliffordRef.GetDead == 1
+			Set Wedding to 99									; Cancel the wedding if anyone important is dead
+		EndIf
+	EndIf
+
+	If Wedding == 2
+
+		Set Today to GameDaysPassed
+
+		if (getStage ANiceDayForARightWedding < 80)
+
+			setStage ANiceDayForARightWedding 80
+
+		Endif
+
+		If Today == WeddingDay
+
+			Set Wedding to 3									; Day of the wedding has arrived
+
+		EndIf
+
+	ElseIf Wedding == 3										; Day of the wedding has arrived
+
+		if (getStage ANiceDayForARightWedding < 90)
+			setStage ANiceDayForARightWedding 90
+		Endif
+
+		If EVPflag == 0
+
+			If Gamehour > 13
+				AngelaStaleyRef.EVP
+				DiegoRef.EVP
+				Set EVPflag to 1
+			EndIf
+
+		EndIf
+
+		If GameDaysPassed > WeddingDay + 1
+			Set Wedding to 6									; Wedding has come and gone, player didn't attend
+			Set DiegoDefrocked to 3							; Diego leaves the church to marry Angela
+			AngelaDiegoHomeMarker.Enable
+		EndIf
+
+	ElseIf Wedding == 6										; Wedding ceremony is complete
+
+		if (getStage ANiceDayForARightWedding < 100)
+			setStage ANiceDayForARightWedding 100
+		Endif
+
+	Endif
+
+
+End
